@@ -4,56 +4,8 @@ import tactic
 
 open int
 
--- inductive even : ℕ → Prop
--- | even_zero : even 0
--- | even_ss : ∀ {n}, even n → even (n + 2)
-
--- def even (n : ℕ) : Prop := ∃ (k:ℕ), n = 2*k
-
--- def odd (n : ℕ) : Prop := ¬ (even n)
-
--- lemma even_or_odd (n : ℕ) : even n ∨ odd n := 
--- begin 
---     exact classical.em (even n),
--- end 
-
--- lemma odd_imp_even_plus_one (n : ℕ) : odd n → ∃ k, 2*k + 1 = n := 
--- begin 
---     intro h',
---     by_cases (2 ∣ n),
---         exfalso,
---         apply h',
---         exact h,
-
-
-
--- end
-
-
-
-
-#eval gcd 1 2 
-#eval gcd 10 15
-
-
-
--- lemma square_even_imp_even {a : ℤ} : even (a^2) → even a := 
--- begin 
--- -- rintro ⟨k, h⟩,
--- -- unfold even,
--- -- suggest,
-
--- unfold even,
--- contrapose,
--- push_neg,
--- intros h1 k h2,
--- specialize h1 (k/a),
-
-
--- sorry,
--- end 
-
---lifted from tutorial project 
+/-lifted from tutorial project. I think there's potential to explain and 
+develop these lemmas and parity in detail, but it could make the tutorial pretty long-/
 def odd (n : ℤ) : Prop := ∃ k, n = 2*k + 1
 
 #check int.not_even_iff
@@ -101,8 +53,15 @@ rw h,
 ring,
 end
 
-def rational (n : ℤ) : Prop := ∃ a b : ℤ, (rel_prime a b ∧ a^2 = 2*b^2)
+def rational (n : ℤ) : Prop := ∃ a b : ℤ, (rel_prime a b ∧ a^2 = n*b^2)
 
+--I feel like this exists in mathlib. I'm trying to find it.
+lemma div_both_sides {a b k : ℤ} (h : k*a = k*b) (hk : k ≠ 0) : a = b := 
+begin 
+  sorry,
+end
+
+--this could probably be cleaner/broken into smaller steps
 theorem root_two_not_rational : ¬ rational 2 :=
 begin 
     rintros ⟨a, b, a_b_rel_prime, h⟩,
@@ -110,21 +69,59 @@ begin
     have a_squared_even : even (a^2),
         rw h,
         use b^2,
-    have a_even : even a, exact square_even_iff_even a_squared_even,
+    have a_even : even a, 
+        exact (square_even_iff_even a).mp a_squared_even,
     cases a_even with c a_even,
     rw a_even at h,
     have b_squared_even : even (b^2),
-        sorry,
+        unfold even,
+        use c^2,
+        rw mul_pow 2 c 2 at h,
+        rw pow_succ at h,
+        rw mul_assoc 2 (2^1) (c^2) at h,
+        have h' := div_both_sides h (by linarith),
+        simp at h',
+        rw h',
     have b_even : even b, 
-        exact square_even_imp_even b_squared_even,
+        exact (square_even_iff_even b).mp b_squared_even,
     apply a_b_rel_prime,
     use 2,
     split,
-    use c,
-    exact a_even,
+    unfold int_divides,
+    rw a_even,
+    simp,
     split,
     rcases b_even with ⟨b_2, b_even⟩,
-    use b_2,
-    exact b_even,
+    rw b_even,
+    unfold int_divides,
+    simp,
     linarith,
+end
+
+
+
+
+
+--me trying to find lemmas in mathlib
+-- example (a b c : ℕ) (h : a*c = b*c) (h' : c ≠ 0) (h'' : a ≠ 0) (h''' : b ≠ 0)
+--    : a = b := 
+-- begin 
+--   library_search,
+--   sorry,
+-- end 
+
+example (a b c : ℕ) (h : a = b) : a*c = b*c :=
+begin 
+  exact congr_fun (congr_arg has_mul.mul h) c,
+end
+
+example (a b : ℕ) (h : 2*a = 2*b) : a = b := 
+begin 
+  refine eq.symm _,
+  sorry,
+end
+
+example (a : ℕ) : (2*a)^2 = 2^2 * a^2 := 
+begin 
+  exact nat.mul_pow 2 a 2, 
 end
